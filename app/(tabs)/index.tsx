@@ -1,98 +1,320 @@
 import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import {
+  ChevronRight,
+  Laptop,
+  Network,
+  Package,
+  Receipt,
+  Search,
+  SearchX,
+  Tv,
+  Wifi,
+  X,
+} from 'lucide-react-native';
+import { useMemo, useState } from 'react';
+import { ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { Box } from '@/components/ui/box';
+import { Card } from '@/components/ui/card';
+import { Divider } from '@/components/ui/divider';
+import { Heading } from '@/components/ui/heading';
+import { HStack } from '@/components/ui/hstack';
+import { Icon } from '@/components/ui/icon';
+import { Input, InputField, InputIcon, InputSlot } from '@/components/ui/input';
+import { Text } from '@/components/ui/text';
+import { VStack } from '@/components/ui/vstack';
 
-export default function HomeScreen() {
+const stats = [
+  { label: 'Total Request', value: '1,248', icon: Package, color: '#0a7ea4' },
+  { label: 'Total Laptop', value: '23', icon: Laptop, color: '#e65100' },
+  { label: 'Total AV', value: '12', icon: Tv, color: '#6a1b9a' },
+  { label: 'Total Network', value: '18', icon: Network, color: '#2e7d32' },
+];
+
+const assets = [
+  {
+    assetId: 'AST-1001',
+    serialNumber: 'SN-LP-88421',
+    name: 'Dell Latitude 5540',
+    category: 'Laptop',
+    status: 'In Use',
+  },
+  {
+    assetId: 'AST-1002',
+    serialNumber: 'SN-LP-90317',
+    name: 'MacBook Pro 14"',
+    category: 'Laptop',
+    status: 'Available',
+  },
+  {
+    assetId: 'AST-2045',
+    serialNumber: 'SN-AV-55201',
+    name: 'Sony 65" Display',
+    category: 'AV',
+    status: 'In Use',
+  },
+  {
+    assetId: 'AST-2046',
+    serialNumber: 'SN-AV-55288',
+    name: 'Logitech Rally Bar',
+    category: 'AV',
+    status: 'Maintenance',
+  },
+  {
+    assetId: 'AST-3010',
+    serialNumber: 'SN-NW-11042',
+    name: 'Cisco Catalyst 9200',
+    category: 'Network',
+    status: 'In Use',
+  },
+  {
+    assetId: 'AST-3011',
+    serialNumber: 'SN-NW-11097',
+    name: 'Ubiquiti UniFi AP',
+    category: 'Network',
+    status: 'Available',
+  },
+];
+
+const recentActivity = [
+  {
+    id: '1',
+    title: 'Office Supplies restocked',
+    detail: '+120 units · Warehouse A',
+    time: '2h ago',
+    icon: Package,
+    color: '#2e7d32',
+  },
+  {
+    id: '2',
+    title: 'Low stock alert: Printer Ink',
+    detail: '8 units remaining · Reorder suggested',
+    time: '4h ago',
+    icon: Package,
+    color: '#e65100',
+  },
+  {
+    id: '3',
+    title: 'Purchase order #PO-1042 approved',
+    detail: 'Electronics · 3 line items',
+    time: 'Yesterday',
+    icon: Receipt,
+    color: '#0a7ea4',
+  },
+  {
+    id: '4',
+    title: 'Stock transfer completed',
+    detail: 'Warehouse B → Store Front',
+    time: 'Yesterday',
+    icon: Wifi,
+    color: '#6a1b9a',
+  },
+];
+
+function StatCard({
+  label,
+  value,
+  icon,
+  color,
+}: {
+  label: string;
+  value: string;
+  icon: React.ComponentType<any>;
+  color: string;
+}) {
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Hello World!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
-
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <Card className="grow basis-[47%] gap-1.5 rounded-xl p-4">
+      <Box
+        className="h-9 w-9 items-center justify-center rounded-lg"
+        style={{ backgroundColor: `${color}18` }}>
+        <Icon as={icon} color={color} size="md" />
+      </Box>
+      <Text className="text-2xl font-bold leading-8 text-foreground">{value}</Text>
+      <Text className="text-sm text-muted-foreground">{label}</Text>
+    </Card>
   );
 }
 
-const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
-});
+function ActivityItem({
+  title,
+  detail,
+  time,
+  icon,
+  color,
+}: {
+  title: string;
+  detail: string;
+  time: string;
+  icon: React.ComponentType<any>;
+  color: string;
+}) {
+  return (
+    <HStack className="items-center gap-3 py-3.5" space="md">
+      <Box
+        className="h-10 w-10 items-center justify-center rounded-[10px]"
+        style={{ backgroundColor: `${color}18` }}>
+        <Icon as={icon} color={color} size="sm" />
+      </Box>
+      <VStack className="flex-1 gap-0.5">
+        <Text className="text-sm font-semibold text-foreground">{title}</Text>
+        <Text className="text-xs leading-4 text-muted-foreground">{detail}</Text>
+      </VStack>
+      <Text className="text-[11px] text-muted-foreground">{time}</Text>
+    </HStack>
+  );
+}
+
+function AssetResultItem({
+  assetId,
+  serialNumber,
+  name,
+  category,
+  status,
+}: {
+  assetId: string;
+  serialNumber: string;
+  name: string;
+  category: string;
+  status: string;
+}) {
+  return (
+    <HStack className="items-center gap-3 py-3.5" space="md">
+      <Box className="h-10 w-10 items-center justify-center rounded-[10px] bg-accent">
+        <Icon as={Package} className="text-primary" size="sm" />
+      </Box>
+      <VStack className="flex-1 gap-0.5">
+        <Text className="text-sm font-semibold text-foreground">{name}</Text>
+        <Text className="text-xs leading-4 text-muted-foreground">
+          {assetId} · {serialNumber}
+        </Text>
+        <Text className="text-xs leading-4 text-muted-foreground">
+          {category} · {status}
+        </Text>
+      </VStack>
+      <Icon as={ChevronRight} className="text-muted-foreground" size="sm" />
+    </HStack>
+  );
+}
+
+export default function DashboardScreen() {
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredAssets = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return [];
+
+    return assets.filter(
+      (asset) =>
+        asset.assetId.toLowerCase().includes(query) ||
+        asset.serialNumber.toLowerCase().includes(query),
+    );
+  }, [searchQuery]);
+
+  const isSearching = searchQuery.trim().length > 0;
+
+  const today = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  });
+
+  return (
+    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+      <ScrollView contentContainerClassName="gap-1 p-5 pb-8" showsVerticalScrollIndicator={false}>
+        <HStack className="mb-5 items-center justify-between">
+          <VStack className="flex-1 gap-0.5">
+            <Text className="text-[13px] uppercase tracking-wide text-muted-foreground">
+              {today}
+            </Text>
+            <Heading size="2xl" className="text-foreground">
+              Dashboard
+            </Heading>
+            <Text className="mt-0.5 text-sm text-muted-foreground">
+              NexCheck Inventory Management
+            </Text>
+          </VStack>
+          <Image
+            source={require('@/assets/images/logo-nims.png')}
+            style={{ width: 72, height: 48, marginLeft: 12 }}
+            contentFit="contain"
+          />
+        </HStack>
+
+        <Input className="mb-5 h-12 rounded-xl">
+          <InputSlot className="pl-3.5">
+            <InputIcon as={Search} />
+          </InputSlot>
+          <InputField
+            autoCapitalize="none"
+            autoCorrect={false}
+            onChangeText={setSearchQuery}
+            placeholder="Search asset ID or serial number"
+            value={searchQuery}
+          />
+          {isSearching ? (
+            <InputSlot className="pr-3.5" onPress={() => setSearchQuery('')}>
+              <InputIcon as={X} />
+            </InputSlot>
+          ) : null}
+        </Input>
+
+        <HStack className="mb-5 flex-wrap gap-3" space="md">
+          {stats.map((stat) => (
+            <StatCard key={stat.label} {...stat} />
+          ))}
+        </HStack>
+
+        {isSearching ? (
+          <>
+            <HStack className="mb-3 mt-1 items-center justify-between">
+              <Heading size="sm" className="text-foreground">
+                Search Results
+              </Heading>
+              <Text className="text-sm text-muted-foreground">
+                {filteredAssets.length} found
+              </Text>
+            </HStack>
+            <Card className="rounded-xl px-4 py-0">
+              {filteredAssets.length > 0 ? (
+                filteredAssets.map((asset, index) => (
+                  <Box key={asset.assetId}>
+                    <AssetResultItem {...asset} />
+                    {index < filteredAssets.length - 1 ? <Divider /> : null}
+                  </Box>
+                ))
+              ) : (
+                <VStack className="items-center gap-2 py-8">
+                  <Icon as={SearchX} className="text-muted-foreground" size="xl" />
+                  <Text className="text-[15px] font-semibold text-foreground">
+                    No assets found
+                  </Text>
+                  <Text className="text-center text-[13px] text-muted-foreground">
+                    Try searching by asset ID or serial number
+                  </Text>
+                </VStack>
+              )}
+            </Card>
+          </>
+        ) : (
+          <>
+            <HStack className="mb-3 mt-1 items-center justify-between">
+              <Heading size="sm" className="text-foreground">
+                Recent Activity
+              </Heading>
+              <Text className="text-sm font-semibold text-primary">View all</Text>
+            </HStack>
+            <Card className="rounded-xl px-4 py-0">
+              {recentActivity.map((item, index) => (
+                <Box key={item.id}>
+                  <ActivityItem {...item} />
+                  {index < recentActivity.length - 1 ? <Divider /> : null}
+                </Box>
+              ))}
+            </Card>
+          </>
+        )}
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
