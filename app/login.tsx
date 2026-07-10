@@ -47,8 +47,8 @@ export default function LoginScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <VStack space="md">
           <Image
-            source={require('@/assets/images/logo-nims.png')}
-            style={{ width: 280, height: 80, alignSelf: 'center', marginBottom: 8 }}
+            source={require('@/assets/images/icon.png')}
+            style={{ width: 160, height: 160, alignSelf: 'center', marginBottom: 8 }}
             contentFit="contain"
           />
 

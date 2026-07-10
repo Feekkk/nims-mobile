@@ -42,6 +42,56 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="request"
+        options={{
+          href: null,
+          title: 'Loan Requests',
+          headerShown: true,
+          headerStyle: { backgroundColor: '#ffffff' },
+          headerTintColor: tintColor,
+        }}
+      />
+      <Tabs.Screen
+        name="laptop"
+        options={{
+          href: null,
+          title: 'Total Laptop',
+          headerShown: true,
+          headerStyle: { backgroundColor: '#ffffff' },
+          headerTintColor: tintColor,
+        }}
+      />
+      <Tabs.Screen
+        name="av"
+        options={{
+          href: null,
+          title: 'Total AV',
+          headerShown: true,
+          headerStyle: { backgroundColor: '#ffffff' },
+          headerTintColor: tintColor,
+        }}
+      />
+      <Tabs.Screen
+        name="network"
+        options={{
+          href: null,
+          title: 'Total Network',
+          headerShown: true,
+          headerStyle: { backgroundColor: '#ffffff' },
+          headerTintColor: tintColor,
+        }}
+      />
+      <Tabs.Screen
+        name="history"
+        options={{
+          href: null,
+          title: 'Activity History',
+          headerShown: true,
+          headerStyle: { backgroundColor: '#ffffff' },
+          headerTintColor: tintColor,
+        }}
+      />
+      <Tabs.Screen
         name="logout"
         options={{
           title: 'Logout',

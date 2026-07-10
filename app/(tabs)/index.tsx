@@ -4,19 +4,19 @@ import {
   Laptop,
   Network,
   Package,
-  Receipt,
   Search,
   SearchX,
   Tv,
-  Wifi,
   X,
 } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Box } from '@/components/ui/box';
 import { Card } from '@/components/ui/card';
+import { Pressable } from '@/components/ui/pressable';
 import { Divider } from '@/components/ui/divider';
 import { Heading } from '@/components/ui/heading';
 import { HStack } from '@/components/ui/hstack';
@@ -24,12 +24,37 @@ import { Icon } from '@/components/ui/icon';
 import { Input, InputField, InputIcon, InputSlot } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
 import { VStack } from '@/components/ui/vstack';
+import { getRecentActivity } from '@/data/activity-history';
 
 const stats = [
-  { label: 'Total Request', value: '1,248', icon: Package, color: '#0a7ea4' },
-  { label: 'Total Laptop', value: '23', icon: Laptop, color: '#e65100' },
-  { label: 'Total AV', value: '12', icon: Tv, color: '#6a1b9a' },
-  { label: 'Total Network', value: '18', icon: Network, color: '#2e7d32' },
+  {
+    label: 'Total Request',
+    value: '1,248',
+    icon: Package,
+    color: '#0a7ea4',
+    href: '/request' as const,
+  },
+  {
+    label: 'Total Laptop',
+    value: '23',
+    icon: Laptop,
+    color: '#e65100',
+    href: '/laptop' as const,
+  },
+  {
+    label: 'Total AV',
+    value: '12',
+    icon: Tv,
+    color: '#6a1b9a',
+    href: '/av' as const,
+  },
+  {
+    label: 'Total Network',
+    value: '18',
+    icon: Network,
+    color: '#2e7d32',
+    href: '/network' as const,
+  },
 ];
 
 const assets = [
@@ -77,62 +102,35 @@ const assets = [
   },
 ];
 
-const recentActivity = [
-  {
-    id: '1',
-    title: 'Office Supplies restocked',
-    detail: '+120 units · Warehouse A',
-    time: '2h ago',
-    icon: Package,
-    color: '#2e7d32',
-  },
-  {
-    id: '2',
-    title: 'Low stock alert: Printer Ink',
-    detail: '8 units remaining · Reorder suggested',
-    time: '4h ago',
-    icon: Package,
-    color: '#e65100',
-  },
-  {
-    id: '3',
-    title: 'Purchase order #PO-1042 approved',
-    detail: 'Electronics · 3 line items',
-    time: 'Yesterday',
-    icon: Receipt,
-    color: '#0a7ea4',
-  },
-  {
-    id: '4',
-    title: 'Stock transfer completed',
-    detail: 'Warehouse B → Store Front',
-    time: 'Yesterday',
-    icon: Wifi,
-    color: '#6a1b9a',
-  },
-];
+const recentActivity = getRecentActivity();
 
 function StatCard({
   label,
   value,
   icon,
   color,
+  onPress,
 }: {
   label: string;
   value: string;
   icon: React.ComponentType<any>;
   color: string;
+  onPress: () => void;
 }) {
   return (
-    <Card className="grow basis-[47%] gap-1.5 rounded-xl p-4">
-      <Box
-        className="h-9 w-9 items-center justify-center rounded-lg"
-        style={{ backgroundColor: `${color}18` }}>
-        <Icon as={icon} color={color} size="md" />
-      </Box>
-      <Text className="text-2xl font-bold leading-8 text-foreground">{value}</Text>
-      <Text className="text-sm text-muted-foreground">{label}</Text>
-    </Card>
+    <Pressable
+      className="grow basis-[47%] active:opacity-80"
+      onPress={onPress}>
+      <Card className="gap-1.5 rounded-xl p-4">
+        <Box
+          className="h-9 w-9 items-center justify-center rounded-lg"
+          style={{ backgroundColor: `${color}18` }}>
+          <Icon as={icon} color={color} size="md" />
+        </Box>
+        <Text className="text-2xl font-bold leading-8 text-foreground">{value}</Text>
+        <Text className="text-sm text-muted-foreground">{label}</Text>
+      </Card>
+    </Pressable>
   );
 }
 
@@ -198,6 +196,7 @@ function AssetResultItem({
 }
 
 export default function DashboardScreen() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredAssets = useMemo(() => {
@@ -231,12 +230,12 @@ export default function DashboardScreen() {
               Dashboard
             </Heading>
             <Text className="mt-0.5 text-sm text-muted-foreground">
-              NexCheck Inventory Management
+              NexCheck Inventory Management System
             </Text>
           </VStack>
           <Image
-            source={require('@/assets/images/logo-nims.png')}
-            style={{ width: 72, height: 48, marginLeft: 12 }}
+            source={require('@/assets/images/icon.png')}
+            style={{ width: 56, height: 56, marginLeft: 12 }}
             contentFit="contain"
           />
         </HStack>
@@ -261,7 +260,11 @@ export default function DashboardScreen() {
 
         <HStack className="mb-5 flex-wrap gap-3" space="md">
           {stats.map((stat) => (
-            <StatCard key={stat.label} {...stat} />
+            <StatCard
+              key={stat.label}
+              {...stat}
+              onPress={() => router.push(stat.href)}
+            />
           ))}
         </HStack>
 
@@ -302,7 +305,9 @@ export default function DashboardScreen() {
               <Heading size="sm" className="text-foreground">
                 Recent Activity
               </Heading>
-              <Text className="text-sm font-semibold text-primary">View all</Text>
+              <Pressable onPress={() => router.push('/history')} className="active:opacity-70">
+                <Text className="text-sm font-semibold text-primary">View all</Text>
+              </Pressable>
             </HStack>
             <Card className="rounded-xl px-4 py-0">
               {recentActivity.map((item, index) => (

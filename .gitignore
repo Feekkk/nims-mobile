@@ -3,6 +3,7 @@
 # dependencies
 node_modules/
 .cursor/
+schema.sql
 
 # Expo
 .expo/

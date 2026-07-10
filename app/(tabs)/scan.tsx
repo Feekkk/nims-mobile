@@ -1,10 +1,25 @@
 import { BarcodeScanningResult, CameraView, useCameraPermissions } from 'expo-camera';
+import { useAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import { useFocusEffect } from 'expo-router';
-import { CircleCheckBig, Flashlight, FlashlightOff, Package, ScanBarcode } from 'lucide-react-native';
-import { useCallback, useState } from 'react';
+import {
+  CircleCheckBig,
+  Flashlight,
+  FlashlightOff,
+  Package,
+  ScanBarcode,
+  ScanLine,
+} from 'lucide-react-native';
+import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import Animated, {
+  cancelAnimation,
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
 import { Box } from '@/components/ui/box';
 import { Button, ButtonIcon, ButtonText } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -25,11 +40,140 @@ const barcodeTypes = [
   'qr',
 ] as const;
 
-const frameSize = 260;
-const overlayColor = 'rgba(0, 0, 0, 0.55)';
+const frameSize = 240;
+const overlayColor = 'rgba(0, 0, 0, 0.6)';
+const scanLinePadding = 12;
+const scanLineHeight = 3;
 
 function formatBarcodeType(type: string) {
   return type.replace(/_/g, ' ').toUpperCase();
+}
+
+function AnimatedScanLine() {
+  const progress = useSharedValue(0);
+  const travelDistance = frameSize - scanLinePadding * 2 - scanLineHeight;
+
+  useEffect(() => {
+    progress.value = 0;
+    progress.value = withRepeat(
+      withTiming(1, { duration: 1800, easing: Easing.inOut(Easing.quad) }),
+      -1,
+      true,
+    );
+
+    return () => {
+      cancelAnimation(progress);
+    };
+  }, [progress]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: scanLinePadding + progress.value * travelDistance }],
+    opacity: 0.55 + progress.value * 0.45,
+  }));
+
+  return (
+    <Animated.View style={[styles.scanLine, animatedStyle]}>
+      <View style={styles.scanLineGlow} />
+    </Animated.View>
+  );
+}
+
+function ScanFrame({ active }: { active: boolean }) {
+  return (
+    <View style={{ flexDirection: 'row', height: frameSize }}>
+      <View style={{ flex: 1, backgroundColor: overlayColor }} />
+      <View style={{ width: frameSize, height: frameSize, position: 'relative', overflow: 'hidden' }}>
+        <View style={[styles.corner, styles.cornerTopLeft]} />
+        <View style={[styles.corner, styles.cornerTopRight]} />
+        <View style={[styles.corner, styles.cornerBottomLeft]} />
+        <View style={[styles.corner, styles.cornerBottomRight]} />
+        {active ? <AnimatedScanLine /> : null}
+      </View>
+      <View style={{ flex: 1, backgroundColor: overlayColor }} />
+    </View>
+  );
+}
+
+function BottomInfoPanel({
+  scanResult,
+  onScanAgain,
+}: {
+  scanResult: BarcodeScanningResult | null;
+  onScanAgain: () => void;
+}) {
+  if (scanResult) {
+    return (
+      <VStack className="gap-4 px-5 pb-2 pt-3">
+        <HStack className="items-center gap-2.5">
+          <Box className="h-10 w-10 items-center justify-center rounded-full bg-[#2e7d3218]">
+            <Icon as={CircleCheckBig} color="#2e7d32" size="md" />
+          </Box>
+          <VStack className="flex-1 gap-0.5">
+            <Text className="text-base font-bold text-foreground">Barcode scanned</Text>
+            <Text className="text-xs text-muted-foreground">Ready for inventory lookup</Text>
+          </VStack>
+        </HStack>
+
+        <Card className="gap-3 rounded-xl bg-muted p-4">
+          <HStack className="items-start justify-between gap-3">
+            <VStack className="flex-1 gap-1">
+              <Text className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Type
+              </Text>
+              <Text className="text-[15px] font-semibold text-foreground">
+                {formatBarcodeType(scanResult.type)}
+              </Text>
+            </VStack>
+            <Box className="rounded-md bg-primary/10 px-2.5 py-1">
+              <Text className="text-[11px] font-semibold uppercase text-primary">Valid</Text>
+            </Box>
+          </HStack>
+          <VStack className="gap-1">
+            <Text className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Data
+            </Text>
+            <Text className="text-[15px] font-semibold leading-5 text-foreground" selectable>
+              {scanResult.data}
+            </Text>
+          </VStack>
+        </Card>
+
+        <Button onPress={onScanAgain}>
+          <ButtonIcon as={ScanBarcode} />
+          <ButtonText>Scan again</ButtonText>
+        </Button>
+      </VStack>
+    );
+  }
+
+  return (
+    <VStack className="gap-3 px-5 pb-2 pt-3">
+      <HStack className="items-center gap-2.5">
+        <Box className="h-10 w-10 items-center justify-center rounded-full bg-accent">
+          <Icon as={ScanLine} className="text-primary" size="md" />
+        </Box>
+        <VStack className="flex-1 gap-0.5">
+          <Text className="text-base font-bold text-foreground">Ready to scan</Text>
+          <Text className="text-xs text-muted-foreground">Align the barcode inside the frame</Text>
+        </VStack>
+      </HStack>
+
+      <Card className="gap-2.5 rounded-xl bg-muted p-4">
+        <Text className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          Supported formats
+        </Text>
+        <Text className="text-sm leading-5 text-foreground">
+          EAN-13, EAN-8, UPC, Code 128, Code 39, QR
+        </Text>
+        <HStack className="items-center gap-2 pt-0.5">
+          <Icon as={Package} className="text-primary" size="sm" />
+          <Text className="flex-1 text-sm leading-5 text-muted-foreground">
+            Point your camera at a product barcode or QR code
+          </Text>
+        </HStack>
+      </Card>
+    </VStack>
+  );
 }
 
 export default function ScanScreen() {
@@ -38,6 +182,16 @@ export default function ScanScreen() {
   const [scanResult, setScanResult] = useState<BarcodeScanningResult | null>(null);
   const [torchEnabled, setTorchEnabled] = useState(false);
   const [isActive, setIsActive] = useState(true);
+  const beepPlayer = useAudioPlayer(require('@/assets/sounds/scan-beep.wav'));
+
+  useEffect(() => {
+    setAudioModeAsync({ playsInSilentMode: true });
+  }, []);
+
+  const playScanBeep = useCallback(() => {
+    beepPlayer.seekTo(0);
+    beepPlayer.play();
+  }, [beepPlayer]);
 
   useFocusEffect(
     useCallback(() => {
@@ -53,6 +207,7 @@ export default function ScanScreen() {
     if (scanned) return;
     setScanned(true);
     setScanResult(result);
+    playScanBeep();
   };
 
   const handleScanAgain = () => {
@@ -100,84 +255,39 @@ export default function ScanScreen() {
         onBarcodeScanned={scanned ? undefined : handleBarcodeScanned}
       />
 
-      <SafeAreaView className="absolute inset-0 justify-between" edges={['top', 'bottom']}>
-        <HStack className="items-start justify-between px-5 pt-2">
-          <VStack>
-            <Text className="text-[22px] font-bold text-white">Scan Barcode</Text>
-            <Text className="mt-1 text-sm text-white/80">
-              Align the barcode within the frame
-            </Text>
-          </VStack>
-          <Pressable
-            className="h-11 w-11 items-center justify-center rounded-full bg-white/20 data-[active=true]:opacity-85"
-            onPress={() => setTorchEnabled((current) => !current)}
-            style={torchEnabled ? { backgroundColor: '#0a7ea4' } : undefined}>
-            <Icon as={torchEnabled ? Flashlight : FlashlightOff} className="text-white" size="lg" />
-          </Pressable>
-        </HStack>
+      <View style={{ flex: 1 }}>
+        <SafeAreaView edges={['top']}>
+          <HStack className="items-center justify-between px-5 py-3">
+            <VStack className="flex-1 gap-0.5">
+              <Text className="text-xl font-bold text-white">Scan Barcode</Text>
+              <Text className="text-sm text-white/75">Inventory lookup</Text>
+            </VStack>
+            <Pressable
+              className="h-11 w-11 items-center justify-center rounded-full bg-white/20 data-[active=true]:opacity-85"
+              onPress={() => setTorchEnabled((current) => !current)}
+              style={torchEnabled ? { backgroundColor: '#0a7ea4' } : undefined}>
+              <Icon as={torchEnabled ? Flashlight : FlashlightOff} className="text-white" size="lg" />
+            </Pressable>
+          </HStack>
+        </SafeAreaView>
 
         <View style={{ flex: 1, justifyContent: 'center' }}>
           <View style={{ flex: 1, flexDirection: 'row' }}>
             <View style={{ flex: 1, backgroundColor: overlayColor }} />
           </View>
-          <View style={{ flexDirection: 'row', height: frameSize }}>
-            <View style={{ flex: 1, backgroundColor: overlayColor }} />
-            <View style={{ width: frameSize, height: frameSize, position: 'relative' }}>
-              <View style={[styles.corner, styles.cornerTopLeft]} />
-              <View style={[styles.corner, styles.cornerTopRight]} />
-              <View style={[styles.corner, styles.cornerBottomLeft]} />
-              <View style={[styles.corner, styles.cornerBottomRight]} />
-              {!scanned ? <View style={styles.scanLine} /> : null}
-            </View>
-            <View style={{ flex: 1, backgroundColor: overlayColor }} />
-          </View>
+          <ScanFrame active={!scanned} />
           <View style={{ flex: 1, flexDirection: 'row' }}>
             <View style={{ flex: 1, backgroundColor: overlayColor }} />
           </View>
         </View>
 
-        <Card className="min-h-[140px] gap-3 rounded-t-[20px] rounded-b-none px-5 pb-6 pt-5">
-          {scanResult ? (
-            <>
-              <HStack className="items-center gap-2" space="sm">
-                <Icon as={CircleCheckBig} className="text-[#2e7d32]" size="md" />
-                <Text className="text-base font-bold text-foreground">Barcode scanned</Text>
-              </HStack>
-              <VStack className="gap-1 rounded-xl bg-muted p-3.5">
-                <Text className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">
-                  Type
-                </Text>
-                <Text className="text-[15px] font-semibold text-foreground">
-                  {formatBarcodeType(scanResult.type)}
-                </Text>
-                <Text className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">
-                  Data
-                </Text>
-                <Text className="text-[15px] font-semibold text-foreground" selectable>
-                  {scanResult.data}
-                </Text>
-              </VStack>
-              <Button className="mt-1" onPress={handleScanAgain}>
-                <ButtonIcon as={ScanBarcode} />
-                <ButtonText>Scan again</ButtonText>
-              </Button>
-            </>
-          ) : (
-            <>
-              <Text className="text-[15px] font-bold text-foreground">Supported formats</Text>
-              <Text className="text-sm leading-5 text-muted-foreground">
-                EAN-13, EAN-8, UPC, Code 128, Code 39, QR
-              </Text>
-              <HStack className="mt-1 items-center gap-2" space="sm">
-                <Icon as={Package} className="text-primary" size="sm" />
-                <Text className="text-sm leading-5 text-muted-foreground">
-                  Point your camera at a product barcode
-                </Text>
-              </HStack>
-            </>
-          )}
-        </Card>
-      </SafeAreaView>
+        <SafeAreaView edges={['bottom']} className="bg-background">
+          <Box className="items-center pt-2">
+            <Box className="h-1 w-10 rounded-full bg-border" />
+          </Box>
+          <BottomInfoPanel scanResult={scanResult} onScanAgain={handleScanAgain} />
+        </SafeAreaView>
+      </View>
     </View>
   );
 }
@@ -185,45 +295,59 @@ export default function ScanScreen() {
 const styles = StyleSheet.create({
   corner: {
     position: 'absolute',
-    width: 28,
-    height: 28,
-    borderColor: '#0a7ea4',
+    width: 24,
+    height: 24,
+    borderColor: '#fff',
   },
   cornerTopLeft: {
     top: 0,
     left: 0,
-    borderTopWidth: 4,
-    borderLeftWidth: 4,
-    borderTopLeftRadius: 8,
+    borderTopWidth: 3,
+    borderLeftWidth: 3,
+    borderTopLeftRadius: 6,
   },
   cornerTopRight: {
     top: 0,
     right: 0,
-    borderTopWidth: 4,
-    borderRightWidth: 4,
-    borderTopRightRadius: 8,
+    borderTopWidth: 3,
+    borderRightWidth: 3,
+    borderTopRightRadius: 6,
   },
   cornerBottomLeft: {
     bottom: 0,
     left: 0,
-    borderBottomWidth: 4,
-    borderLeftWidth: 4,
-    borderBottomLeftRadius: 8,
+    borderBottomWidth: 3,
+    borderLeftWidth: 3,
+    borderBottomLeftRadius: 6,
   },
   cornerBottomRight: {
     bottom: 0,
     right: 0,
-    borderBottomWidth: 4,
-    borderRightWidth: 4,
-    borderBottomRightRadius: 8,
+    borderBottomWidth: 3,
+    borderRightWidth: 3,
+    borderBottomRightRadius: 6,
   },
   scanLine: {
     position: 'absolute',
-    left: 12,
-    right: 12,
-    top: '50%',
-    height: 2,
+    left: scanLinePadding,
+    right: scanLinePadding,
+    top: 0,
+    height: scanLineHeight,
+    borderRadius: 2,
     backgroundColor: '#0a7ea4',
-    opacity: 0.9,
+    shadowColor: '#0a7ea4',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  scanLineGlow: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: -4,
+    height: 11,
+    borderRadius: 6,
+    backgroundColor: 'rgba(10, 126, 164, 0.25)',
   },
 });
